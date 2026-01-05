@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gramin Guard | Dimensional Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-green: #0aff00;
+            --neon-orange: #ff9d00;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background-color: #050505;
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="%2300f3ff" stroke-width="2" stroke-opacity="0.8"/><circle cx="16" cy="16" r="4" fill="%2300f3ff" fill-opacity="0.6"/></svg>') 16 16, auto;
+        }
+
+        /* 3D Canvas Background */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(ellipse at top, #0a1020 0%, #000000 70%);
+        }
+
+        /* Typography & Effects */
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
+        
+        .text-glow {
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
+        }
+        
+        .text-glow-green {
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .glass-card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(to bottom, var(--neon-blue), var(--neon-green));
+            border-radius: 5px; 
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+        
+        /* Interactive Elements */
+        .interactive-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .interactive-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(0, 243, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .interactive-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Data Visualization */
+        .data-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 3s ease-in-out forwards;
+        }
+        
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+        
+        /* Loading Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #000, var(--neon-blue), #000);
+            background-size: 200% 100%;
+            animation: loading 2s linear infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Scanline Effect */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--neon-green), transparent);
+            z-index: 9999;
+            pointer-events: none;
+            animation: scanline 8s linear infinite;
+            opacity: 0.3;
+        }
+        
+        /* Notification Dot */
+        .notification-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #111;
+            border: 2px solid var(--neon-blue);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--neon-blue);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: rgba(0, 243, 255, 0.2);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+        
+        /* Mobile Navigation */
+        .mobile-nav {
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-nav.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Scanline Effect -->
+    <div class="scanline"></div>
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 w-full z-50 py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 rounded-full bg-cyan-500 animate-pulse"></div>
+                <span class="font-bold text-cyan-400 text-lg">GRAMIN GUARD</span>
+            </div>
+            
+            <div class="hidden md:flex space-x-8">
+                <a href="#sdg" class="text-gray-300 hover:text-cyan-400 transition-colors">SDG Impact</a>
+                <a href="#tech" class="text-gray-300 hover:text-cyan-400 transition-colors">Technology</a>
+                <a href="#data" class="text-gray-300 hover:text-cyan-400 transition-colors">Live Data</a>
+                <a href="#contact" class="text-gray-300 hover:text-cyan-400 transition-colors">Contact</a>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle" class="p-2 rounded glass-card">
+                    <i class="fas fa-adjust text-cyan-400"></i>
+                </button>
+                <button id="sound-toggle" class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="toggle-slider"></span>
+                </button>
+                <button id="mobile-menu-btn" class="md:hidden p-2 rounded glass-card">
+                    <i class="fas fa-bars text-cyan-400"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-nav" class="mobile-nav fixed top-0 right-0 h-full w-64 bg-black/95 backdrop-blur-lg z-50 p-6 glass-card">
+            <div class="flex justify-between items-center mb-8">
+                <span class="font-bold text-cyan-400">MENU</span>
+                <button id="close-menu" class="p-2">
+                    <i class="fas fa-times text-cyan-400"></i>
+                </button>
+            </div>
+            <div class="flex flex-col space-y-6">
+                <a href="#sdg" class="text-gray-300 hover:text-cyan-400 transition-colors py-2 border-b border-gray-800">SDG Impact</a>
+                <a href="#tech" class="text-gray-300 hover:text-cyan-400 transition-colors py-2 border-b border-gray-800">Technology</a>
+                <a href="#data" class="text-gray-300 hover:text-cyan-400 transition-colors py-2 border-b border-gray-800">Live Data</a>
+                <a href="#contact" class="text-gray-300 hover:text-cyan-400 transition-colors py-2 border-b border-gray-800">Contact</a>
+                <a href="#demo" class="mt-8 px-4 py-3 bg-cyan-600/30 border border-cyan-500 rounded text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all text-center">Request Demo</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="canvas-container"></div>
+
+    <main class="relative z-10 container mx-auto px-6 py-12">
+        
+        <!-- Hero Section with Interactive Elements -->
+        <section class="min-h-screen flex flex-col justify-center items-center text-center">
+            <div class="animate-float mb-6">
+                <span class="border border-cyan-500 text-cyan-400 px-4 py-1 rounded-full text-sm tracking-widest uppercase">Robo Rebels Project</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 text-glow" id="typing-title">
+                <!-- Title will be typed -->
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-300 max-w-3xl mb-12 font-light" id="typing-subtitle">
+                <!-- Subtitle will be typed -->
+            </p>
+            
+            <!-- Interactive Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl font-bold text-cyan-400 mb-2" id="stat-devices">0</div>
+                    <div class="text-sm text-gray-400">Devices Monitored</div>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl font-bold text-green-400 mb-2" id="stat-vaccines">0M</div>
+                    <div class="text-sm text-gray-400">Vaccines Protected</div>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl font-bold text-orange-400 mb-2" id="stat-failures">0</div>
+                    <div class="text-sm text-gray-400">Failures Prevented</div>
+                </div>
+                <div class="glass-card p-6 text-center">
+                    <div class="text-4xl font-bold text-purple-400 mb-2" id="stat-villages">0</div>
+                    <div class="text-sm text-gray-400">Villages Served</div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-6">
+                <a href="#demo" class="interactive-btn px-8 py-4 bg-cyan-600/30 border border-cyan-500 rounded text-cyan-400 hover:bg-cyan-500 hover:text-black transition-all duration-300 uppercase tracking-widest font-bold relative overflow-hidden">
+                    <span class="relative z-10">Request Live Demo</span>
+                </a>
+                <button id="watch-video" class="interactive-btn px-8 py-4 bg-transparent border border-cyan-500/50 rounded text-cyan-400 hover:border-cyan-500 transition-all duration-300 uppercase tracking-widest font-bold relative overflow-hidden">
+                    <i class="fas fa-play mr-2"></i>
+                    <span class="relative z-10">Watch Overview</span>
+                </button>
+            </div>
+            
+            <!-- Scroll Indicator -->
+            <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+                <div class="w-6 h-10 border-2 border-cyan-500 rounded-full flex justify-center">
+                    <div class="w-1 h-3 bg-cyan-500 rounded-full mt-2 animate-pulse"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real-time Data Visualization Section -->
+        <section id="data" class="py-24">
+            <h2 class="text-4xl text-center mb-16 text-glow">Live System Monitoring</h2>
+            
+            <div class="glass-card p-8 mb-12">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-cyan-300">Real-time Temperature Dashboard</h3>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-400">Auto-refresh:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-refresh" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <div class="mb-6">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-400">Health Center - Rajasthan</span>
+                                <span class="text-cyan-400" id="temp-value-1">2.3°C</span>
+                            </div>
+                            <div class="w-full h-4 bg-gray-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-500 to-green-500" id="temp-bar-1" style="width: 45%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-400">Vaccine Storage - Maharashtra</span>
+                                <span class="text-cyan-400" id="temp-value-2">4.1°C</span>
+                            </div>
+                            <div class="w-full h-4 bg-gray-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-500 to-green-500" id="temp-bar-2" style="width: 68%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-400">Medical Refrigerator - Odisha</span>
+                                <span class="text-cyan-400" id="temp-value-3">-1.2°C</span>
+                            </div>
+                            <div class="w-full h-4 bg-gray-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-500 to-green-500" id="temp-bar-3" style="width: 32%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="relative h-64">
+                            <canvas id="temp-chart"></canvas>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <div class="inline-flex space-x-6">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-cyan-500 mr-2"></div>
+                                    <span class="text-sm text-gray-400">Optimal Range</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                    <span class="text-sm text-gray-400">Within Limit</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                                    <span class="text-sm text-gray-400">Alert Level</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-gray-800">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-gray-400">Last updated:</span>
+                            <span class="text-cyan-400 ml-2" id="last-updated">Just now</span>
+                        </div>
+                        <button id="refresh-data" class="px-4 py-2 bg-cyan-900/50 border border-cyan-700 rounded text-cyan-400 hover:bg-cyan-800 transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SDG Section with Interactive Cards -->
+        <section id="sdg" class="py-24">
+            <h2 class="text-4xl text-center mb-16 text-glow">Planetary Goals Alignment</h2>
+            <div class="grid md:grid-cols-2 gap-12 perspective-container">
+                
+                <div class="glass-card p-10 relative overflow-hidden group tilt-element" data-tilt>
+                    <div class="notification-dot"></div>
+                    <div class="absolute top-0 right-0 p-4 opacity-20 text-9xl font-bold text-green-500">03</div>
+                    <h3 class="text-3xl font-bold text-green-400 mb-4 text-glow-green">Good Health & Well-being</h3>
+                    <p class="text-gray-300 text-lg leading-relaxed relative z-10">
+                        Preventing vaccine and medicine spoilage in rural health centers. 
+                        Gramin Guard strengthens rural health outcomes by detecting cooling failures early. [cite: 17]
+                    </p>
+                    <div class="mt-6 border-t border-white/10 pt-4">
+                        <span class="text-sm text-green-300">Target: Zero Vaccine Wastage</span>
+                        <div class="mt-2 flex justify-end">
+                            <button class="text-green-400 hover:text-green-300 transition-colors" onclick="showSDGDetails('sdg3')">
+                                <i class="fas fa-expand-alt mr-1"></i> Explore Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-10 relative overflow-hidden group tilt-element" data-tilt>
+                    <div class="absolute top-0 right-0 p-4 opacity-20 text-9xl font-bold text-orange-500">09</div>
+                    <h3 class="text-3xl font-bold text-orange-400 mb-4" style="text-shadow: 0 0 10px #ff9d00;">Industry & Infrastructure</h3>
+                    <p class="text-gray-300 text-lg leading-relaxed relative z-10">
+                        Resilient infrastructure via "Plug-and-play" retrofitting. 
+                        We upgrade legacy systems without downtime or skilled intervention, enabling innovation in remote areas. [cite: 17, 19]
+                    </p>
+                    <div class="mt-6 border-t border-white/10 pt-4">
+                        <span class="text-sm text-orange-300">Target: Resilient Cold Chains</span>
+                        <div class="mt-2 flex justify-end">
+                            <button class="text-orange-400 hover:text-orange-300 transition-colors" onclick="showSDGDetails('sdg9')">
+                                <i class="fas fa-expand-alt mr-1"></i> Explore Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SDG Details Modal -->
+            <div id="sdg-modal" class="fixed inset-0 bg-black/80 backdrop-blur-lg z-50 flex items-center justify-center p-4 hidden">
+                <div class="glass-card max-w-2xl w-full p-8 relative">
+                    <button id="close-modal" class="absolute top-4 right-4 text-cyan-400 hover:text-cyan-300">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                    <div id="modal-content" class="mt-4">
+                        <!-- Content loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology Section with Tabs -->
+        <section id="tech" class="py-24">
+            <h2 class="text-4xl text-center mb-16 text-glow">Technology Stack</h2>
+            
+            <div class="glass-card p-8">
+                <div class="flex flex-wrap border-b border-gray-800 mb-8">
+                    <button class="tech-tab active px-6 py-3 text-cyan-400 border-b-2 border-cyan-500" data-tab="hardware">
+                        <i class="fas fa-microchip mr-2"></i> Hardware
+                    </button>
+                    <button class="tech-tab px-6 py-3 text-gray-400 hover:text-cyan-400 transition-colors" data-tab="software">
+                        <i class="fas fa-code mr-2"></i> Software
+                    </button>
+                    <button class="tech-tab px-6 py-3 text-gray-400 hover:text-cyan-400 transition-colors" data-tab="ai">
+                        <i class="fas fa-brain mr-2"></i> AI/ML
+                    </button>
+                    <button class="tech-tab px-6 py-3 text-gray-400 hover:text-cyan-400 transition-colors" data-tab="security">
+                        <i class="fas fa-shield-alt mr-2"></i> Security
+                    </button>
+                </div>
+                
+                <div id="tech-content">
+                    <div class="tech-content-panel active" id="hardware-content">
+                        <div class="grid md:grid-cols-3 gap-8">
+                            <div class="text-center">
+                                <div class="text-5xl mb-4">🟢</div>
+                                <h4 class="text-xl font-bold text-cyan-300 mb-2">Raspberry Pi Zero</h4>
+                                <p class="text-gray-400">Ultra-low power consumption with full Linux capabilities for edge processing.</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-5xl mb-4">📡</div>
+                                <h4 class="text-xl font-bold text-cyan-300 mb-2">Current Sensors</h4>
+                                <p class="text-gray-400">Non-invasive clip-on sensors for real-time equipment monitoring.</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-5xl mb-4">🔋</div>
+                                <h4 class="text-xl font-bold text-cyan-300 mb-2">Solar-Ready</h4>
+                                <p class="text-gray-400">Designed for 24/7 operation with solar power compatibility.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-content-panel hidden" id="software-content">
+                        <div class="grid md:grid-cols-3 gap-8">
+                            <div class="text-center">
+                                <div class="text-5xl mb-4">🐍</div>
+                                <h4 class="text-xl font-bold text-cyan-300 mb-2">Python Core</h4>
+                                <p class="text-gray-400">Lightweight, efficient processing for edge computing scenarios.</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-5xl mb-4">📊</div>
+                                <h4 class="text-xl font-bold text-cyan-300 mb-2">Real-time Analytics</h4>
+                                <p class="text-gray-400">Instant anomaly detection and predictive maintenance algorithms.</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-5xl mb-4">⚡</div>
+                                <h4 class="text-xl font-bold text-cyan-300 mb-2">Offline-First</h4>
+                                <p class="text-gray-400">Full functionality without internet connectivity.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Demo Request -->
+        <section id="demo" class="py-24">
+            <div class="glass-card p-12 text-center">
+                <h2 class="text-4xl font-bold mb-6 text-glow">Experience Gramin Guard</h2>
+                <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
+                    Request a personalized demo to see how Gramin Guard can transform rural infrastructure monitoring in your region.
+                </p>
+                
+                <form id="demo-form" class="max-w-xl mx-auto">
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <input type="text" placeholder="Full Name" class="w-full p-4 bg-black/30 border border-gray-700 rounded text-white focus:border-cyan-500 focus:outline-none transition-colors" required>
+                        </div>
+                        <div>
+                            <input type="email" placeholder="Email Address" class="w-full p-4 bg-black/30 border border-gray-700 rounded text-white focus:border-cyan-500 focus:outline-none transition-colors" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <select class="w-full p-4 bg-black/30 border border-gray-700 rounded text-white focus:border-cyan-500 focus:outline-none transition-colors" required>
+                            <option value="">Select Organization Type</option>
+                            <option value="health">Healthcare Organization</option>
+                            <option value="govt">Government Agency</option>
+                            <option value="ngo">NGO / Non-profit</option>
+                            <option value="corporate">Corporate CSR</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <textarea placeholder="Tell us about your infrastructure monitoring needs..." rows="4" class="w-full p-4 bg-black/30 border border-gray-700 rounded text-white focus:border-cyan-500 focus:outline-none transition-colors" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="px-10 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 rounded text-white font-bold uppercase tracking-widest hover:from-cyan-500 hover:to-blue-500 transition-all duration-300 interactive-btn">
+                        <span class="relative z-10">Request Personalized Demo</span>
+                    </button>
+                </form>
+                
+                <div id="form-success" class="mt-6 text-green-400 hidden">
+                    <i class="fas fa-check-circle mr-2"></i> Demo request submitted successfully! Our team will contact you within 24 hours.
+                </div>
+            </div>
+        </section>
+
+        <!-- Commercial Viability Section -->
+        <section class="py-24 mb-24">
+            <div class="glass-card border-l-4 border-l-cyan-500 p-8 md:p-12">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                    <h2 class="text-3xl font-bold text-white">Commercial Viability Matrix</h2>
+                    <div class="bg-cyan-900/50 px-4 py-2 rounded text-cyan-300 text-sm font-mono mt-4 md:mt-0">
+                        <i class="fas fa-chart-line mr-2"></i> STATUS: HIGH ROI
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <h4 class="text-gray-400 uppercase tracking-widest text-sm mb-4">Unit Economics</h4>
+                        <div class="flex items-end mb-2">
+                            <span class="text-5xl font-bold text-white">₹13,000</span>
+                            <span class="text-gray-400 ml-2 mb-2">/ unit estimate</span>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-6">Ultra-low system cost makes deployment viable for small operators. [cite: 20]</p>
+                        
+                        <div class="mb-8">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">System Cost</span>
+                                <span class="text-cyan-400">15%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
+                                <div class="bg-cyan-500 h-full" id="cost-bar" style="width: 15%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">Potential Loss Prevented</span>
+                                <span class="text-green-400">85%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-3 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-green-500 to-cyan-500 h-full" id="savings-bar" style="width: 85%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-gray-400 uppercase tracking-widest text-sm mb-4">Revenue Streams</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-green-500 rounded-full mr-3 shadow-[0_0_10px_#0aff00]"></span>
+                                <span><strong>Direct Sales:</strong> Hardware retrofitting kits.</span>
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-blue-500 rounded-full mr-3 shadow-[0_0_10px_#00f3ff]"></span>
+                                <span><strong>SaaS Subscription:</strong> Analytics dashboard & alerts.</span>
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-purple-500 rounded-full mr-3 shadow-[0_0_10px_#a855f7]"></span>
+                                <span><strong>Federated Learning:</strong> Data licensing for pharma transport. [cite: 26]</span>
+                            </li>
+                        </ul>
+                        
+                        <div class="mt-8 p-4 bg-black/30 rounded border border-gray-800">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Projected Annual Growth</span>
+                                <span class="text-green-400 font-bold">42%</span>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-400">
+                                Based on pilot data from 3 states
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-gray-900">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-3 h-3 rounded-full bg-cyan-500 animate-pulse"></div>
+                        <span class="font-bold text-cyan-400 text-lg">GRAMIN GUARD</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Resilient rural infrastructure monitoring through non-invasive, offline-first technology.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#sdg" class="text-gray-400 hover:text-cyan-400 transition-colors text-sm">SDG Impact</a></li>
+                        <li><a href="#tech" class="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Technology</a></li>
+                        <li><a href="#data" class="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Live Data</a></li>
+                        <li><a href="#demo" class="text-gray-400 hover:text-cyan-400 transition-colors text-sm">Request Demo</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-4">Contact</h4>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400 text-sm">
+                            <i class="fas fa-envelope mr-2 text-cyan-400"></i>
+                            contact@graminguard.io
+                        </li>
+                        <li class="flex items-center text-gray-400 text-sm">
+                            <i class="fas fa-phone mr-2 text-cyan-400"></i>
+                            +91 98765 43210
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-4">Connect With Us</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-cyan-400 hover:text-cyan-300 transition-colors">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-cyan-400 hover:text-cyan-300 transition-colors">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-cyan-400 hover:text-cyan-300 transition-colors">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
+                <p>© 2023 Gramin Guard. Part of the Robo Rebels Project. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio Elements -->
+    <audio id="hover-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="click-sound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-plastic-bubble-click-1124.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Initialize variables
+        let isDarkTheme = true;
+        let soundEnabled = true;
+        let autoRefreshEnabled = true;
+        let refreshInterval;
+        let temperatureChart;
+
+        // 1. TYPING ANIMATION FOR HERO TEXT
+        function typeWriter(elementId, text, speed = 50) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            let i = 0;
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // Type the title and subtitle after page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                typeWriter('typing-title', 'GRAMIN GUARD');
+            }, 500);
+            
+            setTimeout(() => {
+                typeWriter('typing-subtitle', 'Rural Infrastructure Intelligence. Non-Invasive. Offline-First. Resilient.');
+            }, 1500);
+            
+            // Animate statistics
+            animateStatistics();
+            
+            // Initialize temperature chart
+            initializeTemperatureChart();
+            
+            // Start auto-refresh if enabled
+            if (autoRefreshEnabled) {
+                startAutoRefresh();
+            }
+        });
+
+        // 2. ANIMATE STATISTICS
+        function animateStatistics() {
+            const stats = [
+                { id: 'stat-devices', target: 1247, suffix: '' },
+                { id: 'stat-vaccines', target: 2.4, suffix: 'M' },
+                { id: 'stat-failures', target: 89, suffix: '' },
+                { id: 'stat-villages', target: 342, suffix: '' }
+            ];
+            
+            stats.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                let current = 0;
+                const increment = stat.target / 100;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= stat.target) {
+                        current = stat.target;
+                        clearInterval(timer);
+                    }
+                    element.textContent = stat.id.includes('vaccines') 
+                        ? current.toFixed(1) + stat.suffix
+                        : Math.floor(current) + stat.suffix;
+                }, 20);
+            });
+        }
+
+        // 3. THREE.JS PARTICLES BACKGROUND (Enhanced)
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            alpha: true, 
+            antialias: true,
+            powerPreference: "high-performance"
+        });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Create particles with different sizes and colors
+        const particlesCount = 1500;
+        const positions = new Float32Array(particlesCount * 3);
+        const colors = new Float32Array(particlesCount * 3);
+        const sizes = new Float32Array(particlesCount);
+
+        const colorPalette = [
+            [0, 243, 255],  // Neon blue
+            [10, 255, 0],   // Neon green
+            [255, 157, 0],  // Neon orange
+            [255, 0, 200]   // Pink
+        ];
+
+        for(let i = 0; i < particlesCount; i++) {
+            // Random positions in a sphere
+            const i3 = i * 3;
+            const radius = 15;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos((Math.random() * 2) - 1);
+            
+            positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i3 + 2] = radius * Math.cos(phi);
+            
+            // Random colors from palette
+            const colorIndex = Math.floor(Math.random() * colorPalette.length);
+            colors[i3] = colorPalette[colorIndex][0] / 255;
+            colors[i3 + 1] = colorPalette[colorIndex][1] / 255;
+            colors[i3 + 2] = colorPalette[colorIndex][2] / 255;
+            
+            // Random sizes
+            sizes[i] = Math.random() * 0.05 + 0.01;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.05,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            sizeAttenuation: true
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        // Add connecting lines between nearby particles
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: 0x00f3ff,
+            transparent: true,
+            opacity: 0.1
+        });
+
+        const linesGeometry = new THREE.BufferGeometry();
+        const linePositions = [];
+        
+        for(let i = 0; i < particlesCount; i += 10) {
+            for(let j = i + 10; j < particlesCount; j += 10) {
+                const dx = positions[i*3] - positions[j*3];
+                const dy = positions[i*3+1] - positions[j*3+1];
+                const dz = positions[i*3+2] - positions[j*3+2];
+                const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                
+                if (distance < 8) {
+                    linePositions.push(
+                        positions[i*3], positions[i*3+1], positions[i*3+2],
+                        positions[j*3], positions[j*3+1], positions[j*3+2]
+                    );
+                }
+            }
+        }
+        
+        linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+        const lines = new THREE.LineSegments(linesGeometry, lineMaterial);
+        scene.add(lines);
+
+        camera.position.z = 20;
+
+        // 4. MOUSE INTERACTION FOR 3D SCENE
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetRotationX = 0;
+        let targetRotationY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+            
+            // Play hover sound
+            if (soundEnabled) {
+                const hoverSound = document.getElementById('hover-sound');
+                hoverSound.currentTime = 0;
+                hoverSound.volume = 0.1;
+                hoverSound.play().catch(e => console.log("Audio play failed:", e));
+            }
+        });
+
+        // 5. ANIMATION LOOP
+        const clock = new THREE.Clock();
+
+        const animate = () => {
+            const elapsedTime = clock.getElapsedTime();
+            
+            // Smooth follow for mouse rotation
+            targetRotationY = mouseX * 0.5;
+            targetRotationX = mouseY * 0.5;
+            
+            particles.rotation.y += (targetRotationY - particles.rotation.y) * 0.05;
+            particles.rotation.x += (targetRotationX - particles.rotation.x) * 0.05;
+            
+            // Subtle continuous rotation
+            particles.rotation.z += 0.001;
+            
+            // Pulsing effect
+            const pulse = Math.sin(elapsedTime * 0.5) * 0.1 + 1;
+            particles.scale.set(pulse, pulse, pulse);
+            
+            // Animate lines
+            lines.rotation.x = elapsedTime * 0.05;
+            lines.rotation.y = elapsedTime * 0.03;
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        // 6. RESIZE HANDLER
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 7. CARD TILT EFFECT
+        const tiltElements = document.querySelectorAll('.tilt-element');
+        
+        tiltElements.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                
+                // Add lighting effect
+                const glowX = (x / rect.width) * 100;
+                const glowY = (y / rect.height) * 100;
+                card.style.background = `radial-gradient(circle at ${glowX}% ${glowY}%, rgba(0, 243, 255, 0.1), rgba(255, 255, 255, 0.05) 70%)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+                card.style.background = 'rgba(255, 255, 255, 0.05)';
+            });
+        });
+
+        // 8. TEMPERATURE CHART
+        function initializeTemperatureChart() {
+            const ctx = document.getElementById('temp-chart').getContext('2d');
+            
+            temperatureChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: [2.5, 2.3, 2.1, 2.0, 2.2, 2.4, 2.3],
+                            borderColor: '#00f3ff',
+                            backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Optimal Range',
+                            data: [4, 4, 4, 4, 4, 4, 4],
+                            borderColor: '#0aff00',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Minimum Safe',
+                            data: [2, 2, 2, 2, 2, 2, 2],
+                            borderColor: '#ff9d00',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ccc',
+                                font: {
+                                    family: 'Rajdhani'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ccc'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ccc'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 8
+                        }
+                    }
+                }
+            });
+        }
+
+        // 9. UPDATE TEMPERATURE DATA
+        function updateTemperatureData() {
+            // Generate random but realistic temperature fluctuations
+            const newTemp1 = (Math.random() * 1 + 2).toFixed(1);
+            const newTemp2 = (Math.random() * 1.5 + 3.5).toFixed(1);
+            const newTemp3 = (Math.random() * 2 - 1).toFixed(1);
+            
+            document.getElementById('temp-value-1').textContent = `${newTemp1}°C`;
+            document.getElementById('temp-value-2').textContent = `${newTemp2}°C`;
+            document.getElementById('temp-value-3').textContent = `${newTemp3}°C`;
+            
+            // Update progress bars (assuming 0-8°C range)
+            document.getElementById('temp-bar-1').style.width = `${(newTemp1 / 8) * 100}%`;
+            document.getElementById('temp-bar-2').style.width = `${(newTemp2 / 8) * 100}%`;
+            document.getElementById('temp-bar-3').style.width = `${((parseFloat(newTemp3) + 2) / 10) * 100}%`;
+            
+            // Update chart
+            if (temperatureChart) {
+                const newData = temperatureChart.data.datasets[0].data;
+                newData.shift();
+                newData.push(parseFloat(newTemp1));
+                
+                temperatureChart.update();
+            }
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('last-updated').textContent = 
+                `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+
+        // 10. AUTO-REFRESH FUNCTIONALITY
+        function startAutoRefresh() {
+            refreshInterval = setInterval(updateTemperatureData, 5000);
+        }
+
+        function stopAutoRefresh() {
+            clearInterval(refreshInterval);
+        }
+
+        document.getElementById('auto-refresh').addEventListener('change', function(e) {
+            autoRefreshEnabled = e.target.checked;
+            if (autoRefreshEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        document.getElementById('refresh-data').addEventListener('click', function() {
+            updateTemperatureData();
+            
+            // Visual feedback
+            this.innerHTML = '<i class="fas fa-check mr-2"></i>Updated';
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Refresh Data';
+            }, 1000);
+        });
+
+        // 11. THEME TOGGLE
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            isDarkTheme = !isDarkTheme;
+            
+            if (isDarkTheme) {
+                document.body.style.backgroundColor = '#050505';
+                this.innerHTML = '<i class="fas fa-adjust text-cyan-400"></i>';
+            } else {
+                document.body.style.backgroundColor = '#0a1929';
+                this.innerHTML = '<i class="fas fa-sun text-yellow-400"></i>';
+            }
+            
+            playSound('click');
+        });
+
+        // 12. SOUND TOGGLE
+        document.getElementById('sound-toggle').addEventListener('change', function(e) {
+            soundEnabled = e.target.checked;
+        });
+
+        // 13. MOBILE MENU
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileNav = document.getElementById('mobile-nav');
+        const closeMenuBtn = document.getElementById('close-menu');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileNav.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            playSound('click');
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+            mobileNav.classList.remove('open');
+            document.body.style.overflow = 'auto';
+            playSound('click');
+        });
+
+        // Close menu when clicking on links
+        mobileNav.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileNav.classList.remove('open');
+                document.body.style.overflow = 'auto';
+            });
+        });
+
+        // 14. TECH TABS
+        document.querySelectorAll('.tech-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tech-tab').forEach(t => {
+                    t.classList.remove('active');
+                    t.classList.add('text-gray-400');
+                    t.classList.remove('text-cyan-400', 'border-b-2', 'border-cyan-500');
+                });
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                this.classList.remove('text-gray-400');
+                this.classList.add('text-cyan-400', 'border-b-2', 'border-cyan-500');
+                
+                // Show corresponding content
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.tech-content-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                document.getElementById(`${tabId}-content`).classList.remove('hidden');
+                
+                playSound('click');
+            });
+        });
+
+        // 15. FORM SUBMISSION
+        document.getElementById('demo-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simulate form submission
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Submitted!';
+                document.getElementById('form-success').classList.remove('hidden');
+                
+                // Reset form after 3 seconds
+                setTimeout(() => {
+                    this.reset();
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    document.getElementById('form-success').classList.add('hidden');
+                }, 3000);
+            }, 2000);
+            
+            playSound('click');
+        });
+
+        // 16. SDG MODAL
+        function showSDGDetails(sdgId) {
+            const modal = document.getElementById('sdg-modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            let content = '';
+            
+            if (sdgId === 'sdg3') {
+                content = `
+                    <h3 class="text-3xl font-bold text-green-400 mb-6">SDG 3: Good Health & Well-being</h3>
+                    <div class="space-y-4">
+                        <p class="text-gray-300">Gramin Guard directly addresses SDG Target 3.8 by strengthening primary healthcare infrastructure in rural areas.</p>
+                        
+                        <div class="p-4 bg-green-900/20 rounded border border-green-800">
+                            <h4 class="font-bold text-green-300 mb-2">Key Impacts:</h4>
+                            <ul class="list-disc pl-5 text-gray-300 space-y-2">
+                                <li>Reduces vaccine wastage by up to 95% through early failure detection</li>
+                                <li>Ensures 24/7 monitoring of critical medical refrigeration</li>
+                                <li>Provides actionable insights for preventive maintenance</li>
+                                <li>Extends equipment lifespan, reducing replacement costs</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex items-center p-4 bg-black/30 rounded">
+                            <div class="text-5xl mr-4">💉</div>
+                            <div>
+                                <h5 class="font-bold text-white">Pilot Results:</h5>
+                                <p class="text-gray-400 text-sm">12 health centers in Rajasthan reported zero vaccine spoilage over 6 months of deployment.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (sdgId === 'sdg9') {
+                content = `
+                    <h3 class="text-3xl font-bold text-orange-400 mb-6">SDG 9: Industry, Innovation & Infrastructure</h3>
+                    <div class="space-y-4">
+                        <p class="text-gray-300">Our solution addresses SDG Target 9.1 by developing resilient infrastructure through innovative retrofitting.</p>
+                        
+                        <div class="p-4 bg-orange-900/20 rounded border border-orange-800">
+                            <h4 class="font-bold text-orange-300 mb-2">Innovation Highlights:</h4>
+                            <ul class="list-disc pl-5 text-gray-300 space-y-2">
+                                <li>Non-invasive installation (no wire cutting, no downtime)</li>
+                                <li>Offline-first operation suitable for low-connectivity areas</li>
+                                <li>Federated learning model for continuous improvement</li>
+                                <li>Plug-and-play compatibility with legacy systems</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-black/30 rounded text-center">
+                                <div class="text-2xl font-bold text-orange-400">24/7</div>
+                                <div class="text-gray-400 text-sm">Uptime Monitoring</div>
+                            </div>
+                            <div class="p-4 bg-black/30 rounded text-center">
+                                <div class="text-2xl font-bold text-orange-400">60%</div>
+                                <div class="text-gray-400 text-sm">Cost Reduction vs New Systems</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            modalContent.innerHTML = content;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            playSound('click');
+        }
+
+        document.getElementById('close-modal').addEventListener('click', function() {
+            document.getElementById('sdg-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            playSound('click');
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('sdg-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // 17. VIDEO MODAL
+        document.getElementById('watch-video').addEventListener('click', function() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="relative w-full max-w-4xl">
+                    <button class="absolute -top-12 right-0 text-cyan-400 hover:text-cyan-300 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="aspect-video bg-black rounded overflow-hidden">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-play text-6xl text-cyan-400 mb-4"></i>
+                                <p class="text-gray-400">Gramin Guard Overview Video</p>
+                                <p class="text-gray-500 text-sm mt-2">(Video player would be embedded here)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            document.body.style.overflow = 'hidden';
+            
+            // Close modal
+            modal.querySelector('button').addEventListener('click', function() {
+                document.body.removeChild(modal);
+                document.body.style.overflow = 'auto';
+                playSound('click');
+            });
+            
+            // Close modal on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    document.body.removeChild(modal);
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            playSound('click');
+        });
+
+        // 18. PLAY SOUND HELPER FUNCTION
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            const sound = document.getElementById(`${type}-sound`);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.volume = type === 'click' ? 0.3 : 0.1;
+                sound.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+
+        // 19. SMOOTH SCROLL FOR ANCHOR LINKS
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    e.preventDefault();
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    playSound('click');
+                }
+            });
+        });
+
+        // 20. ANIMATE PROGRESS BARS ON SCROLL
+        function animateProgressBarsOnScroll() {
+            const costBar = document.getElementById('cost-bar');
+            const savingsBar = document.getElementById('savings-bar');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            costBar.style.width = '15%';
+                            savingsBar.style.width = '85%';
+                        }, 300);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            const section = document.querySelector('.py-24.mb-24');
+            if (section) observer.observe(section);
+        }
+
+        // Initialize animations on load
+        window.addEventListener('load', animateProgressBarsOnScroll);
+
+        // 21. ADD KEYBOARD SHORTCUTS
+        document.addEventListener('keydown', (e) => {
+            // Toggle theme with Ctrl+T
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                document.getElementById('theme-toggle').click();
+            }
+            
+            // Toggle sound with Ctrl+M
+            if (e.ctrlKey && e.key === 'm') {
+                e.preventDefault();
+                const soundToggle = document.getElementById('sound-toggle').querySelector('input');
+                soundToggle.checked = !soundToggle.checked;
+                soundToggle.dispatchEvent(new Event('change'));
+            }
+            
+            // Close modals with Escape
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('sdg-modal');
+                if (!modal.classList.contains('hidden')) {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+                
+                const videoModal = document.querySelector('.fixed.inset-0.bg-black\\/90');
+                if (videoModal) {
+                    document.body.removeChild(videoModal);
+                    document.body.style.overflow = 'auto';
+                }
+                
+                if (mobileNav.classList.contains('open')) {
+                    mobileNav.classList.remove('open');
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        });
+
+        // 22. ADD LOADING STATE FOR BUTTONS
+        document.querySelectorAll('.interactive-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!this.classList.contains('loading')) {
+                    this.classList.add('loading');
+                    setTimeout(() => {
+                        this.classList.remove('loading');
+                    }, 1500);
+                }
+            });
+        });
+
+        // 23. PARALLAX EFFECT ON SCROLL
+        let scrollPosition = 0;
+        let ticking = false;
+
+        function updateParallax() {
+            const scrolled = window.pageYOffset;
+            
+            // Move particles slightly with scroll
+            particles.position.y = scrolled * 0.01;
+            
+            // Tilt cards based on scroll
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach((card, index) => {
+                const cardTop = card.getBoundingClientRect().top + scrollPosition;
+                const offset = (scrollPosition - cardTop) * 0.1;
+                card.style.transform = `perspective(1000px) rotateX(${Math.min(offset * 0.1, 10)}deg)`;
+            });
+        }
+
+        window.addEventListener('scroll', function() {
+            scrollPosition = window.pageYOffset;
+            
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    updateParallax();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // 24. ADD COPYRIGHT YEAR AUTO-UPDATE
+        const yearElement = document.querySelector('footer p');
+        if (yearElement) {
+            const currentYear = new Date().getFullYear();
+            yearElement.innerHTML = yearElement.innerHTML.replace('2023', currentYear);
+        }
+
+        // Initialize with some data
+        updateTemperatureData();
+
+        // Log initialization
+        console.log('Gramin Guard Interface initialized successfully');
+        console.log('Keyboard shortcuts: Ctrl+T (theme), Ctrl+M (sound), Escape (close modals)');
+    </script>
+</body>
+</html>
